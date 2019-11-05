@@ -67,6 +67,8 @@ bug fixed and features pull requests
 #include "spark_wiring_tcpclient.h"
 #include "spark_wiring_usbserial.h"
 
+#include <functional>
+
 // MQTT_MAX_PACKET_SIZE : Maximum packet size
 // this size is total of [MQTT Header(Max:5byte) + Topic Name Length + Topic Name + Message ID(QoS1|2) + Payload]
 #define MQTT_MAX_PACKET_SIZE 255
@@ -124,6 +126,8 @@ typedef enum {
     CONN_NOT_AUTHORIZED = 5
 } EMQTT_CONNACK_RESPONSE;
 
+typedef std::function<void(char*,uint8_t*,unsigned int)> CallbackF;
+
 private:
     TCPClient _client;
     uint8_t *buffer = NULL;
@@ -131,7 +135,7 @@ private:
     unsigned long lastOutActivity;
     unsigned long lastInActivity;
     bool pingOutstanding;
-    void (*callback)(char*,uint8_t*,unsigned int);
+    CallbackF callback;
     void (*qoscallback)(unsigned int);
     uint16_t readPacket(uint8_t*);
     uint8_t readByte();
@@ -143,7 +147,7 @@ private:
     int keepalive;
     uint16_t maxpacketsize;
 
-    void initialize(char* domain, uint8_t *ip, uint16_t port, int keepalive, void (*callback)(char*,uint8_t*,unsigned int), int maxpacketsize);
+    void initialize(char* domain, uint8_t *ip, uint16_t port, int keepalive, CallbackF callback, int maxpacketsize);
     bool publishRelease(uint16_t messageid);
     bool publishComplete(uint16_t messageid);
 
@@ -166,7 +170,11 @@ public:
 
     MQTT(uint8_t *ip, uint16_t port, int keepalive, void (*callback)(char*,uint8_t*,unsigned int), int maxpacketsize);
 
-    ~MQTT();
+    MQTT(char* domain, uint16_t port, int keepalive, CallbackF callback);
+
+    MQTT(uint8_t *ip, uint16_t port, int keepalive, CallbackF callback);
+
+   ~MQTT();
 
     void setBroker(char* domain, uint16_t port);
     void setBroker(uint8_t *ip, uint16_t port);
